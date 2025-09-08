@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🍎 Instant Health Tracker
 
-## Getting Started
+A modern web application that uses AI to analyze food photos and track your daily calorie intake.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- 📸 **Photo Upload**: Take or upload photos of your food
+- 🤖 **AI Analysis**: Uses OpenAI's GPT-4 Vision to analyze food and estimate calories
+- 📝 **Food Logging**: Track what you eat throughout the day
+- ✏️ **Edit Items**: Modify food items after logging
+- 📅 **Calendar View**: See your calorie intake over time
+- 🎯 **Goal Tracking**: Set and track daily calorie goals
+- �� **Local Storage**: All data is stored locally in your browser
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Set up OpenAI API**:
+   - Get your API key from [OpenAI](https://platform.openai.com/api-keys)
+   - Copy `.env.local.example` to `.env.local`
+   - Add your API key to `.env.local`:
+     ```
+     OPENAI_API_KEY=your_api_key_here
+     ```
 
-## Learn More
+3. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Open your browser**:
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How to Use
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Upload a food photo**: Click "Add Food" tab and upload a photo of your meal
+2. **Add description** (optional): Provide additional context about the food
+3. **Analyze**: Click "Analyze Food" to get AI-powered calorie estimation
+4. **Review**: Check the analysis and edit if needed
+5. **Track progress**: View your daily goal progress and calendar
 
-## Deploy on Vercel
+## Technology Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Frontend**: Next.js 14, React, TypeScript
+- **Styling**: Tailwind CSS
+- **AI**: OpenAI GPT-4 Vision API
+- **Icons**: Lucide React
+- **Date Handling**: date-fns
+- **Storage**: Browser localStorage
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API Usage
+
+The app uses OpenAI's GPT-4 Vision API for food analysis. Make sure you have sufficient API credits.
+
+## Contributing
+
+Feel free to submit issues and enhancement requests!
+
+## License
+
+MIT License

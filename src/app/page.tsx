@@ -1,103 +1,159 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Calendar, Plus } from 'lucide-react';
+import PhotoUpload from '@/components/PhotoUpload';
+import FoodLog from '@/components/FoodLog';
+import CalendarView from '@/components/CalendarView';
+import GoalBar from '@/components/GoalBar';
+import InstallPrompt from '@/components/InstallPrompt';
+import { FoodItem, DailyLog } from '@/types/food';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [activeTab, setActiveTab] = useState<'log' | 'calendar'>('log');
+  const [foodLogs, setFoodLogs] = useState<DailyLog[]>([]);
+  const [dailyGoal, setDailyGoal] = useState(2000);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    // Load data from localStorage
+    const savedLogs = localStorage.getItem('foodLogs');
+    const savedGoal = localStorage.getItem('dailyGoal');
+    
+    if (savedLogs) {
+      setFoodLogs(JSON.parse(savedLogs));
+    }
+    if (savedGoal) {
+      setDailyGoal(parseInt(savedGoal));
+    }
+  }, []);
+
+  const addFoodItem = (foodItem: FoodItem) => {
+    const today = new Date().toISOString().split('T')[0];
+    const existingDayIndex = foodLogs.findIndex(log => log.date === today);
+    
+    const newFoodItem = {
+      ...foodItem,
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString()
+    };
+
+    let updatedLogs: DailyLog[];
+
+    if (existingDayIndex >= 0) {
+      updatedLogs = foodLogs.map((log, index) => 
+        index === existingDayIndex 
+          ? { ...log, items: [...log.items, newFoodItem] }
+          : log
+      );
+    } else {
+      const newLog: DailyLog = {
+        date: today,
+        items: [newFoodItem],
+        totalCalories: 0
+      };
+      updatedLogs = [...foodLogs, newLog];
+    }
+    
+    setFoodLogs(updatedLogs);
+    localStorage.setItem('foodLogs', JSON.stringify(updatedLogs));
+  };
+
+  const updateFoodItem = (itemId: string, updatedItem: Partial<FoodItem>) => {
+    const updatedLogs = foodLogs.map(log => ({
+      ...log,
+      items: log.items.map(item => 
+        item.id === itemId ? { ...item, ...updatedItem } : item
+      )
+    }));
+    setFoodLogs(updatedLogs);
+    localStorage.setItem('foodLogs', JSON.stringify(updatedLogs));
+  };
+
+  const deleteFoodItem = (itemId: string) => {
+    const updatedLogs = foodLogs.map(log => ({
+      ...log,
+      items: log.items.filter(item => item.id !== itemId)
+    }));
+    setFoodLogs(updatedLogs);
+    localStorage.setItem('foodLogs', JSON.stringify(updatedLogs));
+  };
+
+  const getTodayCalories = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayLog = foodLogs.find(log => log.date === today);
+    return todayLog ? todayLog.items.reduce((sum, item) => sum + item.calories, 0) : 0;
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <header className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
+            🍎 Instant Health Tracker
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            Track your calories with AI-powered food analysis
+          </p>
+        </header>
+
+        {/* Goal Bar */}
+        <div className="mb-6 sm:mb-8">
+          <GoalBar 
+            current={getTodayCalories()} 
+            goal={dailyGoal} 
+            onGoalChange={setDailyGoal}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Navigation Tabs */}
+        <div className="flex justify-center mb-6 sm:mb-8">
+          <div className="bg-white rounded-lg p-1 shadow-md w-full max-w-sm">
+            <div className="grid grid-cols-2 gap-1">
+              <button
+                onClick={() => setActiveTab('log')}
+                className={`px-4 py-3 rounded-md transition-colors text-sm font-medium ${
+                  activeTab === 'log'
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Plus className="inline w-4 h-4 mr-2" />
+                Add Food
+              </button>
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className={`px-4 py-3 rounded-md transition-colors text-sm font-medium ${
+                  activeTab === 'calendar'
+                    ? 'bg-blue-500 text-white'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Calendar className="inline w-4 h-4 mr-2" />
+                Calendar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="max-w-4xl mx-auto">
+          {activeTab === 'log' ? (
+            <div className="space-y-4 sm:space-y-6">
+              <PhotoUpload onFoodAnalyzed={addFoodItem} />
+              <FoodLog 
+                foodLogs={foodLogs}
+                onUpdateItem={updateFoodItem}
+                onDeleteItem={deleteFoodItem}
+              />
+            </div>
+          ) : (
+            <CalendarView foodLogs={foodLogs} />
+          )}
+        </div>
+      </div>
+      
+      {/* Install Prompt */}
+      <InstallPrompt />
     </div>
   );
 }
