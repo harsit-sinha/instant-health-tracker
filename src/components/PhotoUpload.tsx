@@ -21,13 +21,17 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       const ctx = canvas.getContext('2d');
       const img = new Image();
       
+      // Set crossOrigin to handle CORS issues
+      img.crossOrigin = 'anonymous';
+      
       img.onload = () => {
         try {
           console.log('Image loaded successfully:', {
             naturalWidth: img.naturalWidth,
             naturalHeight: img.naturalHeight,
             width: img.width,
-            height: img.height
+            height: img.height,
+            fileType: file.type
           });
 
           // Set canvas dimensions to match image
@@ -46,13 +50,22 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
           // Draw image on canvas
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Convert to JPEG with high quality
-          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          // Try different quality levels if needed
+          let quality = 0.9;
+          let jpegDataUrl = canvas.toDataURL('image/jpeg', quality);
+          
+          // If the image is too large, reduce quality
+          while (jpegDataUrl.length > 5000000 && quality > 0.3) { // 5MB limit
+            quality -= 0.1;
+            jpegDataUrl = canvas.toDataURL('image/jpeg', quality);
+            console.log(`Reduced quality to ${quality}, size: ${jpegDataUrl.length}`);
+          }
           
           console.log('JPEG conversion result:', {
             dataUrlLength: jpegDataUrl.length,
             startsWithDataImage: jpegDataUrl.startsWith('data:image/'),
-            isJpeg: jpegDataUrl.includes('data:image/jpeg')
+            isJpeg: jpegDataUrl.includes('data:image/jpeg'),
+            quality: quality
           });
           
           if (!jpegDataUrl.startsWith('data:image/jpeg')) {
@@ -78,7 +91,8 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
         console.log('FileReader result:', {
           type: typeof result,
           length: result?.length,
-          startsWithDataImage: result?.startsWith('data:image/')
+          startsWithDataImage: result?.startsWith('data:image/'),
+          fileType: file.type
         });
         img.src = result;
       };
@@ -139,9 +153,17 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       lastModified: file.lastModified
     });
     
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file (JPEG, PNG, etc.)');
+    // Validate file type - support all image formats
+    const supportedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 
+      'image/tiff', 'image/tif', 'image/webp', 'image/avif', 'image/heic', 'image/heif'
+    ];
+    
+    const fileExtension = file.name.toLowerCase().split('.').pop();
+    const supportedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'webp', 'avif', 'heic', 'heif'];
+    
+    if (!file.type.startsWith('image/') && !supportedExtensions.includes(fileExtension || '')) {
+      setError('Please select a valid image file (JPEG, PNG, WebP, HEIC, AVIF, etc.)');
       return;
     }
     
@@ -151,10 +173,18 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       return;
     }
     
-    // Additional validation for Android camera photos
+    // Additional validation for corrupted files
     if (file.size < 1000) {
       setError('Image file appears to be corrupted or too small. Please try taking a new photo.');
       return;
+    }
+    
+    // Check if it's a HEIC/HEIF file (iPhone photos)
+    const isHeicFile = file.type === 'image/heic' || file.type === 'image/heif' || 
+                      fileExtension === 'heic' || fileExtension === 'heif';
+    
+    if (isHeicFile) {
+      console.log('HEIC/HEIF file detected - will attempt conversion');
     }
     
     try {
@@ -201,9 +231,11 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       } catch (fallbackError) {
         console.error('Fallback method also failed:', fallbackError);
         
-        // More specific error messages
+        // More specific error messages based on file type
         if (error instanceof Error) {
-          if (error.message.includes('Failed to convert image')) {
+          if (isHeicFile) {
+            setError('HEIC/HEIF files from iPhone cameras need special handling. Please try taking a new photo or using a different image format.');
+          } else if (error.message.includes('Failed to convert image')) {
             setError('Image processing failed. This might be due to the image format. Please try taking a new photo or selecting a different image.');
           } else if (error.message.includes('Failed to load image')) {
             setError('Could not load the image. Please try a different photo.');
@@ -364,12 +396,12 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
                   Drag and drop or click to select from gallery
                 </p>
                 <p className="text-xs text-gray-400 mb-4">
-                  iPhone photos will be automatically converted for better compatibility
+                  Supports all formats: JPEG, PNG, WebP, HEIC, AVIF, and more
                 </p>
               </div>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif,.avif,.webp,.jpeg,.jpg,.png,.gif,.bmp,.tiff,.tif"
                 onChange={handleFileInput}
                 className="hidden"
                 id="image-upload"

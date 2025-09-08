@@ -42,10 +42,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Additional validation for image format
-    if (!image.includes('data:image/jpeg') && !image.includes('data:image/png') && !image.includes('data:image/webp')) {
+    // Additional validation for image format - support more formats
+    const supportedFormats = [
+      'data:image/jpeg', 'data:image/jpg', 'data:image/png', 'data:image/gif', 
+      'data:image/bmp', 'data:image/tiff', 'data:image/tif', 'data:image/webp', 
+      'data:image/avif', 'data:image/heic', 'data:image/heif'
+    ];
+    
+    const isSupportedFormat = supportedFormats.some(format => image.includes(format));
+    
+    if (!isSupportedFormat) {
       return NextResponse.json(
-        { success: false, error: 'Unsupported image format. Please use JPEG, PNG, or WebP images.' },
+        { success: false, error: 'Unsupported image format. Please use JPEG, PNG, WebP, HEIC, AVIF, or other common image formats.' },
         { status: 400 }
       );
     }
