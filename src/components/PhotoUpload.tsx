@@ -157,6 +157,13 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
     }
   };
 
+  const logEvent = (type: 'info' | 'success' | 'error' | 'warning', message: string, details?: string) => {
+    const event = new CustomEvent('app-log', {
+      detail: { type, message, details }
+    });
+    window.dispatchEvent(event);
+  };
+
   const handleImageUpload = async (file: File) => {
     setError(null);
     
@@ -169,6 +176,8 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       size: file.size,
       lastModified: file.lastModified
     });
+    
+    logEvent('info', `Processing ${file.name}`, `Type: ${file.type}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
     
     // Validate file type - support all image formats
     const supportedTypes = [
@@ -213,8 +222,10 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
     try {
       // Convert image to JPEG format for better compatibility
       console.log('Starting image conversion...');
+      logEvent('info', 'Converting image to JPEG', 'Processing image for OpenAI compatibility');
       const convertedImage = await convertImageToJpeg(file);
       console.log('Image conversion successful');
+      logEvent('success', 'Image converted successfully', `Size: ${(convertedImage.length / 1024 / 1024).toFixed(2)}MB`);
       
       // Validate the converted image
       if (!convertedImage || !convertedImage.startsWith('data:image/jpeg')) {
@@ -294,6 +305,8 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
     setIsAnalyzing(true);
     setError(null);
     
+    logEvent('info', 'Starting food analysis', 'Sending image to AI for calorie analysis');
+    
     try {
       const response = await fetch('/api/analyze-food', {
         method: 'POST',
@@ -309,6 +322,7 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       const data = await response.json();
       
       if (data.success) {
+        logEvent('success', `Food analyzed: ${data.name}`, `${data.calories} calories`);
         onFoodAnalyzed({
           id: Date.now().toString(),
           name: data.name,
@@ -324,6 +338,7 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
         setDescription('');
         setError(null);
       } else {
+        logEvent('error', 'Analysis failed', data.error || 'Unknown error');
         // Show more specific error messages
         if (data.details) {
           setError(`${data.error}. ${data.details}`);
@@ -333,6 +348,7 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       }
     } catch (error) {
       console.error('Error analyzing food:', error);
+      logEvent('error', 'Analysis failed', error instanceof Error ? error.message : 'Unknown error');
       
       // More specific error handling
       if (error instanceof Error) {

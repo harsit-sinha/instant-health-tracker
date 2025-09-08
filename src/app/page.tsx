@@ -8,6 +8,7 @@ import CalendarView from '@/components/CalendarView';
 import GoalBar from '@/components/GoalBar';
 import InstallPrompt from '@/components/InstallPrompt';
 import AppFooter from '@/components/AppFooter';
+import RecentLogs from '@/components/RecentLogs';
 import { FoodItem, DailyLog } from '@/types/food';
 
 export default function Home() {
@@ -143,6 +144,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto">
             {activeTab === 'log' ? (
               <div className="space-y-3 sm:space-y-6">
+                <RecentLogs />
                 <PhotoUpload onFoodAnalyzed={addFoodItem} />
                 <FoodLog 
                   foodLogs={foodLogs}
