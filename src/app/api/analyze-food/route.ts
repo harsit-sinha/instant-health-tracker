@@ -24,10 +24,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log image details for debugging
+    console.log('Received image:', {
+      startsWithDataImage: image.startsWith('data:image/'),
+      imageType: image.substring(0, 50) + '...',
+      imageLength: image.length,
+      hasJpeg: image.includes('data:image/jpeg'),
+      hasPng: image.includes('data:image/png'),
+      hasWebp: image.includes('data:image/webp')
+    });
+
     // Validate image format
     if (!image.startsWith('data:image/')) {
       return NextResponse.json(
         { success: false, error: 'Invalid image format. Please upload a valid image file.' },
+        { status: 400 }
+      );
+    }
+
+    // Additional validation for image format
+    if (!image.includes('data:image/jpeg') && !image.includes('data:image/png') && !image.includes('data:image/webp')) {
+      return NextResponse.json(
+        { success: false, error: 'Unsupported image format. Please use JPEG, PNG, or WebP images.' },
         { status: 400 }
       );
     }

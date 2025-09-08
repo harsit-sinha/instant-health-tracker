@@ -23,58 +23,67 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       
       img.onload = () => {
         try {
-          // Handle EXIF orientation for Android camera photos
-          const orientation = getImageOrientation(file);
-          let { width, height } = img;
-          
-          // Apply orientation correction
-          if (orientation >= 5 && orientation <= 8) {
-            [width, height] = [height, width];
-          }
-          
-          // Set canvas dimensions
-          canvas.width = width;
-          canvas.height = height;
+          console.log('Image loaded successfully:', {
+            naturalWidth: img.naturalWidth,
+            naturalHeight: img.naturalHeight,
+            width: img.width,
+            height: img.height
+          });
+
+          // Set canvas dimensions to match image
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
           
           if (!ctx) {
             reject(new Error('Could not get canvas context'));
             return;
           }
           
-          // Apply orientation transformation
-          applyOrientation(ctx, orientation, width, height);
+          // Clear canvas and set white background
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
           
           // Draw image on canvas
-          ctx.drawImage(img, 0, 0);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Convert to JPEG with quality 0.8
-          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          // Convert to JPEG with high quality
+          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          
+          console.log('JPEG conversion result:', {
+            dataUrlLength: jpegDataUrl.length,
+            startsWithDataImage: jpegDataUrl.startsWith('data:image/'),
+            isJpeg: jpegDataUrl.includes('data:image/jpeg')
+          });
+          
+          if (!jpegDataUrl.startsWith('data:image/jpeg')) {
+            throw new Error('Failed to convert to JPEG format');
+          }
+          
           resolve(jpegDataUrl);
         } catch (error) {
           console.error('Canvas conversion error:', error);
-          // Fallback: try without orientation correction
-          try {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx?.drawImage(img, 0, 0);
-            const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            resolve(jpegDataUrl);
-          } catch (fallbackError) {
-            reject(new Error('Failed to convert image to JPEG'));
-          }
+          reject(new Error('Failed to convert image to JPEG: ' + (error instanceof Error ? error.message : 'Unknown error')));
         }
       };
       
-      img.onerror = () => {
+      img.onerror = (error) => {
+        console.error('Image load error:', error);
         reject(new Error('Failed to load image'));
       };
       
       // Use a more robust image loading approach
       const reader = new FileReader();
       reader.onload = (e) => {
-        img.src = e.target?.result as string;
+        const result = e.target?.result as string;
+        console.log('FileReader result:', {
+          type: typeof result,
+          length: result?.length,
+          startsWithDataImage: result?.startsWith('data:image/')
+        });
+        img.src = result;
       };
-      reader.onerror = () => {
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
         reject(new Error('Failed to read image file'));
       };
       reader.readAsDataURL(file);
@@ -164,17 +173,39 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
     } catch (error) {
       console.error('Image conversion error:', error);
       
-      // More specific error messages
-      if (error instanceof Error) {
-        if (error.message.includes('Failed to convert image')) {
-          setError('Image processing failed. This might be due to the image format. Please try taking a new photo or selecting a different image.');
-        } else if (error.message.includes('Failed to load image')) {
-          setError('Could not load the image. Please try a different photo.');
+      // Fallback: try to use the original file without conversion
+      try {
+        console.log('Trying fallback method with original file...');
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          if (result && result.startsWith('data:image/')) {
+            console.log('Fallback method successful');
+            setImage(result);
+            setError(null);
+          } else {
+            setError('Image processing failed. Please try a different image.');
+          }
+        };
+        reader.onerror = () => {
+          setError('Could not process the image. Please try a different photo.');
+        };
+        reader.readAsDataURL(file);
+      } catch (fallbackError) {
+        console.error('Fallback method also failed:', fallbackError);
+        
+        // More specific error messages
+        if (error instanceof Error) {
+          if (error.message.includes('Failed to convert image')) {
+            setError('Image processing failed. This might be due to the image format. Please try taking a new photo or selecting a different image.');
+          } else if (error.message.includes('Failed to load image')) {
+            setError('Could not load the image. Please try a different photo.');
+          } else {
+            setError(`Image processing error: ${error.message}. Please try a different image.`);
+          }
         } else {
-          setError(`Image processing error: ${error.message}. Please try a different image.`);
+          setError('Failed to process the image. Please try a different image.');
         }
-      } else {
-        setError('Failed to process the image. Please try a different image.');
       }
     }
   };
