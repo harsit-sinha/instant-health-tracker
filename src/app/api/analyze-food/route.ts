@@ -16,19 +16,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate image format
-    if (!image.startsWith('data:image/')) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid image format. Please upload a valid image file.' },
-        { status: 400 }
-      );
-    }
-
     // Check if API key is set
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { success: false, error: 'OpenAI API key not configured' },
         { status: 500 }
+      );
+    }
+
+    // Validate image format
+    if (!image.startsWith('data:image/')) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid image format. Please upload a valid image file.' },
+        { status: 400 }
       );
     }
 
@@ -107,12 +107,12 @@ Please respond in the following JSON format:
     
     // More specific error handling
     if (error instanceof Error) {
-      if (error.message.includes('400')) {
+      if (error.message.includes('400') || error.message.includes('unsupported image')) {
         return NextResponse.json(
           { 
             success: false, 
             error: 'Invalid image format. Please try uploading a different image.',
-            details: 'The image format is not supported by OpenAI. Try using a different image file.'
+            details: 'The image format is not supported by OpenAI. Try using a different image file (JPEG, PNG, etc.).'
           },
           { status: 400 }
         );
