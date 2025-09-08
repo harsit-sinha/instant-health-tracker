@@ -15,7 +15,34 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleImageUpload = (file: File) => {
+  const convertImageToJpeg = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Set canvas dimensions
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw image on canvas
+        ctx?.drawImage(img, 0, 0);
+        
+        // Convert to JPEG with quality 0.8
+        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(jpegDataUrl);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleImageUpload = async (file: File) => {
     setError(null);
     
     if (!file) return;
@@ -32,25 +59,24 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       return;
     }
     
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (result) {
-        setImage(result);
-        setError(null);
-      }
-    };
-    reader.onerror = () => {
-      setError('Failed to read the image file. Please try again.');
-    };
-    reader.readAsDataURL(file);
+    try {
+      // Convert image to JPEG format for better compatibility
+      const convertedImage = await convertImageToJpeg(file);
+      setImage(convertedImage);
+      setError(null);
+    } catch (error) {
+      console.error('Image conversion error:', error);
+      setError('Failed to process the image. Please try a different image.');
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files[0];
-    handleImageUpload(file);
+    if (file) {
+      handleImageUpload(file);
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,6 +189,9 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
               <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-sm sm:text-base text-gray-600 mb-2">
                 Drag and drop your food photo here, or click to browse
+              </p>
+              <p className="text-xs text-gray-500 mb-3">
+                iPhone photos will be automatically converted for better compatibility
               </p>
               <input
                 type="file"

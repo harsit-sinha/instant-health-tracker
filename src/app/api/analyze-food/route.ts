@@ -107,12 +107,12 @@ Please respond in the following JSON format:
     
     // More specific error handling
     if (error instanceof Error) {
-      if (error.message.includes('400') || error.message.includes('unsupported image')) {
+      if (error.message.includes('400') || error.message.includes('unsupported image') || error.message.includes('image_parse_error')) {
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Invalid image format. Please try uploading a different image.',
-            details: 'The image format is not supported by OpenAI. Try using a different image file (JPEG, PNG, etc.).'
+            error: 'Image format not supported. Please try taking a new photo or using a different image.',
+            details: 'The image format is not supported by OpenAI. Try taking a new photo with your camera or using a different image file.'
           },
           { status: 400 }
         );
