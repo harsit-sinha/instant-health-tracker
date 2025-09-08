@@ -73,6 +73,21 @@ Please respond in the following JSON format:
   "analysis": "Brief explanation of calorie estimation"
 }`;
 
+    console.log('Sending request to OpenAI with image length:', image.length);
+    
+    // Check if image is too large for OpenAI (20MB limit)
+    if (image.length > 20 * 1024 * 1024) {
+      console.log('Image too large for OpenAI API');
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Image file is too large. Please use a smaller image.',
+          details: 'The image is larger than 20MB. Please compress or resize the image and try again.'
+        },
+        { status: 400 }
+      );
+    }
+    
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -93,6 +108,12 @@ Please respond in the following JSON format:
         },
       ],
       max_tokens: 500,
+    });
+    
+    console.log('OpenAI response received:', {
+      hasChoices: !!response.choices,
+      choicesLength: response.choices?.length,
+      hasContent: !!response.choices?.[0]?.message?.content
     });
 
     const content = response.choices[0]?.message?.content;
@@ -130,10 +151,16 @@ Please respond in the following JSON format:
 
   } catch (error) {
     console.error('Error analyzing food:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     
     // More specific error handling
     if (error instanceof Error) {
       if (error.message.includes('400') || error.message.includes('unsupported image') || error.message.includes('image_parse_error')) {
+        console.log('OpenAI image format error detected');
         return NextResponse.json(
           { 
             success: false, 
