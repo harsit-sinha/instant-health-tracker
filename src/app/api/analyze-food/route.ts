@@ -182,12 +182,12 @@ Please respond in the following JSON format:
         );
       }
       
-      if (error.message.includes('429')) {
+      if (error.message.includes('429') || error.message.includes('quota') || error.message.includes('exceeded')) {
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Rate limit exceeded. Please try again later.',
-            details: 'You have exceeded the OpenAI API rate limit.'
+            error: 'API quota exceeded. Please check your OpenAI account or try again later.',
+            details: 'You have exceeded your OpenAI API usage limits. Check your account at platform.openai.com or wait for limits to reset.'
           },
           { status: 429 }
         );

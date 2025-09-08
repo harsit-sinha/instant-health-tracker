@@ -14,6 +14,7 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastAnalyzeTime, setLastAnalyzeTime] = useState<number>(0);
 
   const convertImageToJpeg = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -300,7 +301,15 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
   };
 
   const analyzeFood = async () => {
-    if (!image) return;
+    if (!image || isAnalyzing) return; // Prevent multiple simultaneous calls
+    
+    // Prevent rapid clicking (debounce)
+    const now = Date.now();
+    if (now - lastAnalyzeTime < 2000) { // 2 second cooldown
+      logEvent('warning', 'Please wait before analyzing again', 'Cooldown period active');
+      return;
+    }
+    setLastAnalyzeTime(now);
 
     setIsAnalyzing(true);
     setError(null);
