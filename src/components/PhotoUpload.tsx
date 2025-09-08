@@ -22,30 +22,113 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       const img = new Image();
       
       img.onload = () => {
-        // Set canvas dimensions
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        // Draw image on canvas
-        ctx?.drawImage(img, 0, 0);
-        
-        // Convert to JPEG with quality 0.8
-        const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        resolve(jpegDataUrl);
+        try {
+          // Handle EXIF orientation for Android camera photos
+          const orientation = getImageOrientation(file);
+          let { width, height } = img;
+          
+          // Apply orientation correction
+          if (orientation >= 5 && orientation <= 8) {
+            [width, height] = [height, width];
+          }
+          
+          // Set canvas dimensions
+          canvas.width = width;
+          canvas.height = height;
+          
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'));
+            return;
+          }
+          
+          // Apply orientation transformation
+          applyOrientation(ctx, orientation, width, height);
+          
+          // Draw image on canvas
+          ctx.drawImage(img, 0, 0);
+          
+          // Convert to JPEG with quality 0.8
+          const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          resolve(jpegDataUrl);
+        } catch (error) {
+          console.error('Canvas conversion error:', error);
+          // Fallback: try without orientation correction
+          try {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            resolve(jpegDataUrl);
+          } catch (fallbackError) {
+            reject(new Error('Failed to convert image to JPEG'));
+          }
+        }
       };
       
       img.onerror = () => {
         reject(new Error('Failed to load image'));
       };
       
-      img.src = URL.createObjectURL(file);
+      // Use a more robust image loading approach
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        reject(new Error('Failed to read image file'));
+      };
+      reader.readAsDataURL(file);
     });
+  };
+
+  // Helper function to get image orientation from EXIF data
+  const getImageOrientation = (file: File): number => {
+    // For now, return 1 (no rotation) - in a real app, you'd parse EXIF data
+    // This is a simplified version
+    return 1;
+  };
+
+  // Helper function to apply orientation transformation
+  const applyOrientation = (ctx: CanvasRenderingContext2D, orientation: number, width: number, height: number) => {
+    switch (orientation) {
+      case 2:
+        ctx.transform(-1, 0, 0, 1, width, 0);
+        break;
+      case 3:
+        ctx.transform(-1, 0, 0, -1, width, height);
+        break;
+      case 4:
+        ctx.transform(1, 0, 0, -1, 0, height);
+        break;
+      case 5:
+        ctx.transform(0, 1, 1, 0, 0, 0);
+        break;
+      case 6:
+        ctx.transform(0, 1, -1, 0, height, 0);
+        break;
+      case 7:
+        ctx.transform(0, -1, -1, 0, height, width);
+        break;
+      case 8:
+        ctx.transform(0, -1, 1, 0, 0, width);
+        break;
+      default:
+        break;
+    }
   };
 
   const handleImageUpload = async (file: File) => {
     setError(null);
     
     if (!file) return;
+    
+    // Log file details for debugging
+    console.log('File details:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    });
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -59,14 +142,40 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       return;
     }
     
+    // Additional validation for Android camera photos
+    if (file.size < 1000) {
+      setError('Image file appears to be corrupted or too small. Please try taking a new photo.');
+      return;
+    }
+    
     try {
       // Convert image to JPEG format for better compatibility
+      console.log('Starting image conversion...');
       const convertedImage = await convertImageToJpeg(file);
+      console.log('Image conversion successful');
+      
+      // Validate the converted image
+      if (!convertedImage || !convertedImage.startsWith('data:image/jpeg')) {
+        throw new Error('Image conversion failed - invalid output format');
+      }
+      
       setImage(convertedImage);
       setError(null);
     } catch (error) {
       console.error('Image conversion error:', error);
-      setError('Failed to process the image. Please try a different image.');
+      
+      // More specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to convert image')) {
+          setError('Image processing failed. This might be due to the image format. Please try taking a new photo or selecting a different image.');
+        } else if (error.message.includes('Failed to load image')) {
+          setError('Could not load the image. Please try a different photo.');
+        } else {
+          setError(`Image processing error: ${error.message}. Please try a different image.`);
+        }
+      } else {
+        setError('Failed to process the image. Please try a different image.');
+      }
     }
   };
 
@@ -122,11 +231,28 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
         setDescription('');
         setError(null);
       } else {
-        setError(data.error || 'Failed to analyze food. Please try again.');
+        // Show more specific error messages
+        if (data.details) {
+          setError(`${data.error}. ${data.details}`);
+        } else {
+          setError(data.error || 'Failed to analyze food. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error analyzing food:', error);
-      setError('Network error. Please check your connection and try again.');
+      
+      // More specific error handling
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to convert image')) {
+          setError('Image processing failed. Please try taking a new photo or selecting a different image.');
+        } else if (error.message.includes('Failed to load image')) {
+          setError('Could not load the image. Please try a different photo.');
+        } else {
+          setError('Network error. Please check your connection and try again.');
+        }
+      } else {
+        setError('Network error. Please check your connection and try again.');
+      }
     } finally {
       setIsAnalyzing(false);
     }
