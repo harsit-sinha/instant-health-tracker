@@ -86,18 +86,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        <header className="text-center mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
+      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-8">
+        <header className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">
             🍎 Instant Health Tracker
           </h1>
-          <p className="text-sm sm:text-base text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600 px-2">
             Track your calories with AI-powered food analysis
           </p>
         </header>
 
         {/* Goal Bar */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-4 sm:mb-8">
           <GoalBar 
             current={getTodayCalories()} 
             goal={dailyGoal} 
@@ -106,30 +106,32 @@ export default function Home() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex justify-center mb-6 sm:mb-8">
+        <div className="flex justify-center mb-4 sm:mb-8">
           <div className="bg-white rounded-lg p-1 shadow-md w-full max-w-sm">
             <div className="grid grid-cols-2 gap-1">
               <button
                 onClick={() => setActiveTab('log')}
-                className={`px-4 py-3 rounded-md transition-colors text-sm font-medium ${
+                className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition-colors text-sm font-medium flex items-center justify-center ${
                   activeTab === 'log'
                     ? 'bg-blue-500 text-white'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                <Plus className="inline w-4 h-4 mr-2" />
-                Add Food
+                <Plus className="w-4 h-4 mr-1.5 sm:mr-2" />
+                <span className="hidden xs:inline">Add Food</span>
+                <span className="xs:hidden">Add</span>
               </button>
               <button
                 onClick={() => setActiveTab('calendar')}
-                className={`px-4 py-3 rounded-md transition-colors text-sm font-medium ${
+                className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition-colors text-sm font-medium flex items-center justify-center ${
                   activeTab === 'calendar'
                     ? 'bg-blue-500 text-white'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                <Calendar className="inline w-4 h-4 mr-2" />
-                Calendar
+                <Calendar className="w-4 h-4 mr-1.5 sm:mr-2" />
+                <span className="hidden xs:inline">Calendar</span>
+                <span className="xs:hidden">Cal</span>
               </button>
             </div>
           </div>
@@ -138,7 +140,7 @@ export default function Home() {
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           {activeTab === 'log' ? (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-6">
               <PhotoUpload onFoodAnalyzed={addFoodItem} />
               <FoodLog 
                 foodLogs={foodLogs}

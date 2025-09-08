@@ -45,9 +45,9 @@ export default function GoalBar({ current, goal, onGoalChange }: GoalBarProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
           <Target className="w-5 h-5 mr-2" />
           Daily Calorie Goal
         </h2>
@@ -58,7 +58,7 @@ export default function GoalBar({ current, goal, onGoalChange }: GoalBarProps) {
               type="number"
               value={editGoal}
               onChange={(e) => setEditGoal(e.target.value)}
-              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+              className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-sm"
               min="1"
             />
             <button
@@ -106,12 +106,12 @@ export default function GoalBar({ current, goal, onGoalChange }: GoalBarProps) {
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-800">{Math.round(percentage)}%</div>
-            <div className="text-sm text-gray-600">Progress</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-800">{Math.round(percentage)}%</div>
+            <div className="text-xs sm:text-sm text-gray-600">Progress</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-800">{remaining.toLocaleString()}</div>
-            <div className="text-sm text-gray-600">Remaining</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-800">{remaining.toLocaleString()}</div>
+            <div className="text-xs sm:text-sm text-gray-600">Remaining</div>
           </div>
         </div>
 
