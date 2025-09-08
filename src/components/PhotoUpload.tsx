@@ -21,6 +21,11 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       const ctx = canvas.getContext('2d');
       const img = new Image();
       
+      // Check if it's a HEIF/HEIC file
+      const fileExtension = file.name.toLowerCase().split('.').pop();
+      const isHeicFile = file.type === 'image/heic' || file.type === 'image/heif' || 
+                        fileExtension === 'heic' || fileExtension === 'heif';
+      
       // Set crossOrigin to handle CORS issues
       img.crossOrigin = 'anonymous';
       
@@ -81,7 +86,19 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       
       img.onerror = (error) => {
         console.error('Image load error:', error);
-        reject(new Error('Failed to load image'));
+        console.log('Image load failed for file:', {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          isHeicFile: isHeicFile
+        });
+        
+        // Special handling for HEIF/HEIC files
+        if (isHeicFile) {
+          reject(new Error('HEIF/HEIC files are not supported by this browser. Please convert to JPEG or PNG first.'));
+        } else {
+          reject(new Error('Failed to load image'));
+        }
       };
       
       // Use a more robust image loading approach
@@ -185,6 +202,12 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
     
     if (isHeicFile) {
       console.log('HEIC/HEIF file detected - will attempt conversion');
+      console.log('File details for HEIF:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        extension: fileExtension
+      });
     }
     
     try {
