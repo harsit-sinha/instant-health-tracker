@@ -179,6 +179,13 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
         const reader = new FileReader();
         reader.onload = (e) => {
           const result = e.target?.result as string;
+          console.log('Fallback FileReader result:', {
+            type: typeof result,
+            length: result?.length,
+            startsWithDataImage: result?.startsWith('data:image/'),
+            imageType: result?.substring(0, 30)
+          });
+          
           if (result && result.startsWith('data:image/')) {
             console.log('Fallback method successful');
             setImage(result);
@@ -278,11 +285,13 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
           setError('Image processing failed. Please try taking a new photo or selecting a different image.');
         } else if (error.message.includes('Failed to load image')) {
           setError('Could not load the image. Please try a different photo.');
+        } else if (error.message.includes('400') || error.message.includes('unsupported image')) {
+          setError('Image format not supported. Please try taking a new photo or using a different image.');
         } else {
-          setError('Network error. Please check your connection and try again.');
+          setError('Failed to analyze food. Please try again.');
         }
       } else {
-        setError('Network error. Please check your connection and try again.');
+        setError('Failed to analyze food. Please try again.');
       }
     } finally {
       setIsAnalyzing(false);

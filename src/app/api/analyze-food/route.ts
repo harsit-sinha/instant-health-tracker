@@ -130,7 +130,7 @@ Please respond in the following JSON format:
           { 
             success: false, 
             error: 'Image format not supported. Please try taking a new photo or using a different image.',
-            details: 'The image format is not supported by OpenAI. Try taking a new photo with your camera or using a different image file.'
+            details: 'The image format is not supported by OpenAI. Try taking a new photo with your camera or using a different image file. Camera photos sometimes need to be converted to a different format.'
           },
           { status: 400 }
         );
