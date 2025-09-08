@@ -26,7 +26,7 @@ export default function AppFooter() {
               {buildNumber}
             </span>
             <span className="text-xs text-gray-500">
-              © 2024 Instant Health Tracker
+              © 2025 Instant Health Tracker
             </span>
           </div>
         </div>

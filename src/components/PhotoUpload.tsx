@@ -179,20 +179,28 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
               />
               <button
                 onClick={removeImage}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg flex items-center justify-center"
+                style={{ width: '32px', height: '32px' }}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <div>
-              <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-sm sm:text-base text-gray-600 mb-2">
-                Drag and drop your food photo here, or click to browse
-              </p>
-              <p className="text-xs text-gray-500 mb-3">
-                iPhone photos will be automatically converted for better compatibility
-              </p>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="bg-blue-100 rounded-full p-4">
+                <Upload className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" />
+              </div>
+              <div className="text-center">
+                <p className="text-base sm:text-lg font-medium text-gray-700 mb-2">
+                  Add Food Photo
+                </p>
+                <p className="text-sm text-gray-500 mb-3">
+                  Drag and drop or click to select from gallery
+                </p>
+                <p className="text-xs text-gray-400 mb-4">
+                  iPhone photos will be automatically converted for better compatibility
+                </p>
+              </div>
               <input
                 type="file"
                 accept="image/*"
@@ -202,9 +210,9 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
               />
               <label
                 htmlFor="image-upload"
-                className="inline-block bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 cursor-pointer text-sm sm:text-base"
+                className="inline-block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 cursor-pointer text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
               >
-                Choose File
+                Choose Photo
               </label>
             </div>
           )}
@@ -221,7 +229,8 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="e.g., 'Grilled chicken with rice'"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base text-gray-900 placeholder-gray-500 bg-white"
+            style={{ color: '#111827' }}
           />
         </div>
 
@@ -229,17 +238,17 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
         <button
           onClick={analyzeFood}
           disabled={!image || isAnalyzing}
-          className="w-full bg-green-500 text-white py-3 px-4 rounded-md hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center text-base font-medium"
+          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3.5 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl disabled:shadow-none"
         >
           {isAnalyzing ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Analyzing...
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Analyzing with AI...</span>
             </>
           ) : (
             <>
-              <Camera className="w-4 h-4 mr-2" />
-              Analyze Food
+              <Camera className="w-5 h-5" />
+              <span>Analyze Food</span>
             </>
           )}
         </button>
