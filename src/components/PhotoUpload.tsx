@@ -13,15 +13,37 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
   const [description, setDescription] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImageUpload = (file: File) => {
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+    setError(null);
+    
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (JPEG, PNG, etc.)');
+      return;
     }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image file is too large. Please select an image smaller than 10MB.');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        setImage(result);
+        setError(null);
+      }
+    };
+    reader.onerror = () => {
+      setError('Failed to read the image file. Please try again.');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -42,6 +64,8 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
     if (!image) return;
 
     setIsAnalyzing(true);
+    setError(null);
+    
     try {
       const response = await fetch('/api/analyze-food', {
         method: 'POST',
@@ -70,12 +94,13 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
         // Reset form
         setImage(null);
         setDescription('');
+        setError(null);
       } else {
-        alert('Failed to analyze food. Please try again.');
+        setError(data.error || 'Failed to analyze food. Please try again.');
       }
     } catch (error) {
       console.error('Error analyzing food:', error);
-      alert('Error analyzing food. Please try again.');
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -83,6 +108,7 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
 
   const removeImage = () => {
     setImage(null);
+    setError(null);
   };
 
   return (
@@ -93,6 +119,13 @@ export default function PhotoUpload({ onFoodAnalyzed }: PhotoUploadProps) {
       </h2>
       
       <div className="space-y-4">
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+        
         {/* Image Upload Area */}
         <div
           className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors ${

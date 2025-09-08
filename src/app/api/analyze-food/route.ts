@@ -16,6 +16,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate image format
+    if (!image.startsWith('data:image/')) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid image format. Please upload a valid image file.' },
+        { status: 400 }
+      );
+    }
+
+    // Check if API key is set
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { success: false, error: 'OpenAI API key not configured' },
+        { status: 500 }
+      );
+    }
+
     // Create a prompt for food analysis
     const prompt = `Analyze this food image and provide:
 1. The name of the food item
@@ -88,6 +104,43 @@ Please respond in the following JSON format:
 
   } catch (error) {
     console.error('Error analyzing food:', error);
+    
+    // More specific error handling
+    if (error instanceof Error) {
+      if (error.message.includes('400')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Invalid image format. Please try uploading a different image.',
+            details: 'The image format is not supported by OpenAI. Try using a different image file.'
+          },
+          { status: 400 }
+        );
+      }
+      
+      if (error.message.includes('401')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Invalid API key. Please check your OpenAI API key.',
+            details: 'The OpenAI API key is invalid or expired.'
+          },
+          { status: 401 }
+        );
+      }
+      
+      if (error.message.includes('429')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Rate limit exceeded. Please try again later.',
+            details: 'You have exceeded the OpenAI API rate limit.'
+          },
+          { status: 429 }
+        );
+      }
+    }
+    
     return NextResponse.json(
       { 
         success: false, 
